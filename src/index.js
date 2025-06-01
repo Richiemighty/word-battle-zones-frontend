@@ -1,17 +1,29 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
+import { createRoot } from 'react-dom/client'; // Updated import
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from './app/store';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+import './index.css';
+// Add near the top of index.js
+import { loadUser } from './features/auth/authSlice';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// Add after creating the store
+store.dispatch(loadUser());
+
+// Get the root element
+const container = document.getElementById('root');
+
+// Create a root
+const root = createRoot(container);
+
+// Render the app
 root.render(
   <React.StrictMode>
-    <App />
+    <Provider store={store}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </Provider>
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
