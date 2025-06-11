@@ -1,17 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  socket: null,
+  isConnected: false,
+  socketId: null,
   onlineUsers: [],
-  gameInvites: []
+  gameInvites: [],
+  currentGame: null
 };
 
 const socketSlice = createSlice({
   name: 'socket',
   initialState,
   reducers: {
-    setSocket: (state, action) => {
-      state.socket = action.payload;
+    connectionEstablished: (state, action) => {
+      state.isConnected = true;
+      state.socketId = action.payload;
+    },
+    connectionLost: (state) => {
+      state.isConnected = false;
+      state.socketId = null;
     },
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
@@ -33,5 +40,14 @@ const socketSlice = createSlice({
   }
 });
 
-export const { setSocket, setOnlineUsers, addGameInvite, removeGameInvite } = socketSlice.actions;
+export const { 
+  connectionEstablished, 
+  connectionLost,
+  setOnlineUsers,
+  addGameInvite,
+  removeGameInvite,
+  startGame,
+  updateGame
+} = socketSlice.actions;
+
 export default socketSlice.reducer;
