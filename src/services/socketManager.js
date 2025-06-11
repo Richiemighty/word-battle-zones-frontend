@@ -43,3 +43,4 @@ export const emitGameUpdate = (gameData) => {
     socket.emit('gameUpdate', gameData);
   }
 };
+

@@ -6,6 +6,8 @@ import { searchUsers, sendFriendRequest, clearSearchResults } from '../features/
 import { initializeSocket } from '../services/socketManager';
 import { fetchFriendRequests } from '../features/friendRequests/friendRequestsSlice';
 import { respondToFriendRequest } from '../features/friends/friendRequestsSlice';
+import axios from 'axios';
+
 
 
 function toTitleCase(str) {
@@ -80,6 +82,8 @@ const DashboardPage = () => {
   };
 
 
+
+
   
 
   const handleRespondToRequest = async (requestId, action) => {
@@ -94,11 +98,18 @@ const DashboardPage = () => {
     }
   };
     
-
-
-
-
-
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout', { userId: user._id || user.id });
+  
+      // Optionally clear user state, tokens, etc.
+      localStorage.removeItem('token');
+      navigate('/auth'); // Redirect to login page
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+    
 
   const handleStartGameWithFriend = (friendId) => {
     alert(`Game invitation sent to friend ${friendId}`);
@@ -116,16 +127,32 @@ const DashboardPage = () => {
     <div style={{ padding: '20px', fontFamily: 'Arial', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Welcome, {user.username}!</h1>
-        <div style={{ 
-          padding: '5px 10px',
-          backgroundColor: isConnected ? '#4CAF50' : '#f44336',
-          color: 'white',
-          borderRadius: '4px',
-          fontSize: '14px'
-        }}>
-          {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ 
+            padding: '5px 10px',
+            backgroundColor: isConnected ? '#4CAF50' : '#f44336',
+            color: 'white',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}>
+            {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          </div>
+          <button 
+            onClick={handleLogout}
+            style={{ 
+              padding: '5px 10px', 
+              backgroundColor: '#f44336', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
+
 
       {/* Search Bar */}
       <div style={{ marginBottom: '20px' }}>
