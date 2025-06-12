@@ -280,6 +280,15 @@ const ChallengeButton = styled(ButtonBase)`
 //   return str?.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
 // }
 
+const toTitleCase = (str) => {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : 'Unknown';
+};
+
+const getAvatarLetter = (username) => {
+  return username && typeof username === 'string' ? username.charAt(0).toUpperCase() : '?';
+};
+
+
 const DashboardPage = () => {
   const auth = useSelector(s => s.auth);
   const user = auth.user?.user;
@@ -405,33 +414,38 @@ const DashboardPage = () => {
 
       {/* Full-width Friend Invites */}
       <FullWidthSection>
-        <Section>
-          <SectionTitle>Friend Requests <span>{incomingRequests.length} incoming</span></SectionTitle>
-          {requestStatus === 'loading' ? (
-            <LoadingText>Loading requests...</LoadingText>
-          ) : incomingRequests.length === 0 ? (
-            <EmptyState>No pending friend requests.</EmptyState>
-          ) : (
-            <List>
-              {incomingRequests.map(req => (
-                <ListItem key={req._id}>
-                  <UserInfo>
-                    <Avatar>{req.from.username[0].toUpperCase()}</Avatar>
-                    <div>
-                      <Username>{req.from.username}</Username>
-                      <span style={{ fontSize: '.8rem', color: 'rgba(255,255,255,0.6)' }}>Incoming request</span>
-                    </div>
-                  </UserInfo>
-                  <Actions>
-                    <SuccessButton onClick={() => handleRespond(req._id, 'accept')}>Accept</SuccessButton>
-                    <DangerButton onClick={() => handleRespond(req._id, 'decline')}>Decline</DangerButton>
-                  </Actions>
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </Section>
-      </FullWidthSection>
+      <Section>
+        <SectionTitle>
+          Friend Requests <span>{incomingRequests?.length || 0} incoming</span>
+        </SectionTitle>
+
+        {requestStatus === 'loading' ? (
+          <LoadingText>Loading requests...</LoadingText>
+        ) : !incomingRequests || incomingRequests.length === 0 ? (
+          <EmptyState>No pending friend requests.</EmptyState>
+        ) : (
+          <List>
+            {incomingRequests.map((req) => (
+              <ListItem key={req._id}>
+                <UserInfo>
+                  <Avatar>{getAvatarLetter(req.username)}</Avatar>
+                  <div>
+                    <Username>{toTitleCase(req.username)}</Username>
+                    <span style={{ fontSize: '.8rem', color: 'rgba(255,255,255,0.6)' }}>
+                      Incoming request
+                    </span>
+                  </div>
+                </UserInfo>
+                <Actions>
+                  <SuccessButton onClick={() => handleRespond(req._id, 'accept')}>Accept</SuccessButton>
+                  <DangerButton onClick={() => handleRespond(req._id, 'decline')}>Decline</DangerButton>
+                </Actions>
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </Section>      
+</FullWidthSection>
     </ContentWrapper>
   </DashboardContainer>
 
