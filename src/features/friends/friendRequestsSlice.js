@@ -7,7 +7,7 @@ export const respondToFriendRequest = createAsyncThunk(
     try {
       const token = getState().auth.user.token;
       const response = await axios.post(
-        '${process.env.REACT_APP_API_URL}/api/friend-requests/respond',
+        `${process.env.REACT_APP_API_URL}/api/friend-requests/respond`,
         { requestId, action },
         {
           headers: {
