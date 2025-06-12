@@ -3,27 +3,27 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchFriends } from '../features/friends/friendsSlice';
-import { searchUsers, clearSearchResults } from '../features/search/searchSlice';
+import { searchUsers, sendFriendRequest, clearSearchResults } from '../features/search/searchSlice';
 import { initializeSocket } from '../services/socketManager';
 import { fetchFriendRequests } from '../features/friendRequests/friendRequestsSlice';
 import { respondToFriendRequest } from '../features/friends/friendRequestsSlice';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import styled, { css } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
 // Animations and shared styles
 
-// const float = keyframes`
-//   0% { transform: translateY(0px); }
-//   50% { transform: translateY(-10px); }
-//   100% { transform: translateY(0px); }
-// `;
+const float = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+`;
 
-// const pulse = keyframes`
-//   0% { box-shadow: 0 0 0 0 rgba(157,78,221,0.7); }
-//   70% { box-shadow: 0 0 0 15px rgba(157,78,221,0); }
-//   100% { box-shadow: 0 0 0 0 rgba(157,78,221,0); }
-// `;
+const pulse = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(157,78,221,0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(157,78,221,0); }
+  100% { box-shadow: 0 0 0 0 rgba(157,78,221,0); }
+`;
 const gradientBg = css`
   background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
 `;
@@ -101,11 +101,11 @@ const PrimaryButton = styled(ButtonBase)`
   box-shadow:0 4px 15px rgba(67,97,238,0.3);
   &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(67,97,238,0.4); }
 `;
-// const SecondaryButton = styled(ButtonBase)`
-//   background:linear-gradient(135deg,#4cc9f0,#4895ef); color:#fff;
-//   box-shadow:0 4px 15px rgba(76,201,240,0.3);
-//   &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(76,201,240,0.4); }
-// `;
+const SecondaryButton = styled(ButtonBase)`
+  background:linear-gradient(135deg,#4cc9f0,#4895ef); color:#fff;
+  box-shadow:0 4px 15px rgba(76,201,240,0.3);
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(76,201,240,0.4); }
+`;
 const DangerButton = styled(ButtonBase)`
   background:linear-gradient(135deg,#f87171,#ef4444); color:#fff;
   box-shadow:0 4px 15px rgba(248,113,113,0.3);
@@ -148,13 +148,13 @@ const GameModesGrid = styled.div`
   display:grid; gap:1rem; grid-template-columns:1fr;
   @media(min-width:768px){ grid-template-columns:repeat(2,1fr); }
 `;
-// const GameModeCard = styled(motion.div)`
-//   background:rgba(15,23,42,0.7); border-radius:12px; padding:1.5rem;
-//   border:1px solid rgba(255,255,255,0.1); cursor:pointer;
-//   &:hover{ border-color:rgba(76,201,240,0.3); transform:translateY(-5px); box-shadow:0 10px 25px rgba(0,0,0,0.2); }
-//   position:relative; overflow:hidden;
-//   &::before{ content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(to right,#4cc9f0,#4361ee);}
-// `;
+const GameModeCard = styled(motion.div)`
+  background:rgba(15,23,42,0.7); border-radius:12px; padding:1.5rem;
+  border:1px solid rgba(255,255,255,0.1); cursor:pointer;
+  &:hover{ border-color:rgba(76,201,240,0.3); transform:translateY(-5px); box-shadow:0 10px 25px rgba(0,0,0,0.2); }
+  position:relative; overflow:hidden;
+  &::before{ content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(to right,#4cc9f0,#4361ee);}
+`;
 
 const FullWidthSection = styled.div`
   width: 100%;
@@ -182,42 +182,42 @@ const TwoColumnLayout = styled.div`
 //   margin-bottom:1rem; border:2px solid rgba(76,201,240,0.3);
 // `;
 // Game-themed colors
-// const colors = {
-//   primary: '#6c5ce7',
-//   secondary: '#a29bfe',
-//   accent: '#fd79a8',
-//   dark: '#2d3436',
-//   darker: '#1e272e',
-//   light: '#dfe6e9',
-//   success: '#00b894',
-//   danger: '#d63031',
-//   warning: '#fdcb6e',
-//   info: '#0984e3'
-// };
+const colors = {
+  primary: '#6c5ce7',
+  secondary: '#a29bfe',
+  accent: '#fd79a8',
+  dark: '#2d3436',
+  darker: '#1e272e',
+  light: '#dfe6e9',
+  success: '#00b894',
+  danger: '#d63031',
+  warning: '#fdcb6e',
+  info: '#0984e3'
+};
 
-// const GameOptionIcon = styled.div`
-//   font-size: 3rem;
-//   margin-bottom: 1rem;
-//   background: linear-gradient(135deg, ${colors.primary}, ${colors.accent});
-//   -webkit-background-clip: text;
-//   background-clip: text;
-//   color: transparent;
-//   animation: ${float} 3s ease-in-out infinite;
-// `;
+const GameOptionIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, ${colors.primary}, ${colors.accent});
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ${float} 3s ease-in-out infinite;
+`;
 
 
-// const GameTitle = styled.h3`
-//   color:#fff; margin:0 0 .5rem 0; font-size:1.2rem;
-// `;
-// const GameDescription = styled.p`
-//   color:rgba(255,255,255,0.7); margin:0 0 1rem 0; font-size:.9rem;
-// `;
-// const PlayButton = styled(motion.button)`
-//   padding:.5rem 1.5rem; border:none; border-radius:50px; cursor:pointer;
-//   background:linear-gradient(135deg,#9d4edd,#7b2cbf); color:#fff;
-//   animation:${pulse} 2s infinite; box-shadow:0 4px 15px rgba(157,78,221,0.3);
-//   &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(157,78,221,0.4); animation:none; }
-// `;
+const GameTitle = styled.h3`
+  color:#fff; margin:0 0 .5rem 0; font-size:1.2rem;
+`;
+const GameDescription = styled.p`
+  color:rgba(255,255,255,0.7); margin:0 0 1rem 0; font-size:.9rem;
+`;
+const PlayButton = styled(motion.button)`
+  padding:.5rem 1.5rem; border:none; border-radius:50px; cursor:pointer;
+  background:linear-gradient(135deg,#9d4edd,#7b2cbf); color:#fff;
+  animation:${pulse} 2s infinite; box-shadow:0 4px 15px rgba(157,78,221,0.3);
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(157,78,221,0.4); animation:none; }
+`;
 const EmptyState = styled.div`
   padding:2rem 1rem; text-align:center; color:rgba(255,255,255,0.6);
   font-size:.9rem; border:1px dashed rgba(255,255,255,0.1); border-radius:8px;
@@ -239,7 +239,7 @@ const DashboardPage = () => {
   const auth = useSelector(s => s.auth);
   const user = auth.user?.user;
   const { friends, status: friendsStatus } = useSelector(s => s.friends);
-  // const { results: searchResults, loading: searchLoading } = useSelector(s => s.search);
+  const { results: searchResults, loading: searchLoading } = useSelector(s => s.search);
   const { requests: incomingRequests, status: requestStatus } = useSelector(s => s.friendRequests);
   const { isConnected, onlineUsers } = useSelector(s => s.socket);
   const dispatch = useDispatch();
@@ -256,7 +256,7 @@ const DashboardPage = () => {
   }, [user, navigate, dispatch]);
 
   const handleSearch = e => { e.preventDefault(); searchQuery.trim() ? dispatch(searchUsers(searchQuery)) : dispatch(clearSearchResults()); };
-  // const handleSendRequest = id => dispatch(sendFriendRequest(id));
+  const handleSendRequest = id => dispatch(sendFriendRequest(id));
   const handleRespond = async (rid, act) => { await dispatch(respondToFriendRequest({ requestId: rid, action: act })).unwrap(); dispatch(fetchFriends()); dispatch(fetchFriendRequests()); };
   const handleLogout = async () => {
     await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/logout`, { userId: user._id || user.id });
@@ -284,52 +284,78 @@ const DashboardPage = () => {
 
       {/* Full-width Search */}
       <FullWidthSection>
-        <SearchForm onSubmit={handleSearch}>
-          <SearchInput
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search users by name or username..."
-          />
-          <PrimaryButton type="submit" whileTap={{ scale: 0.95 }}>Search</PrimaryButton>
-        </SearchForm>
-      </FullWidthSection>
-
-      {/* Two-column layout: Friends + Game Modes */}
-      <TwoColumnLayout>
-        <Section>
-          <SectionTitle>Friends <span>{enrichedFriends.length} total</span></SectionTitle>
-          {friendsStatus === 'loading' ? (
-            <LoadingText>Loading friends...</LoadingText>
-          ) : enrichedFriends.length === 0 ? (
-            <EmptyState>No friends yet. Search and add new friends!</EmptyState>
-          ) : (
+          {/* Search Section */}
+          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <SectionTitle>Search Users <span>{searchLoading ? '...' : ''}</span></SectionTitle>
+            <SearchForm onSubmit={handleSearch}>
+              <SearchInput placeholder="Search by username" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <PrimaryButton type="submit" disabled={searchLoading}>Search</PrimaryButton>
+            </SearchForm>
+            {searchLoading && <LoadingText>Searching...</LoadingText>}
             <List>
-              {enrichedFriends.map(friend => (
-                <ListItem key={friend._id}>
+              {searchResults.map(u => (
+                <ListItem key={u._id} whileHover={{ x: 5 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <UserInfo>
-                    <Avatar>{friend.username[0].toUpperCase()}</Avatar>
-                    <div>
-                      <Username>{friend.username}</Username>
-                      <OnlineStatus online={friend.online}>
-                        {friend.online ? 'Online' : 'Offline'}
-                      </OnlineStatus>
-                    </div>
+                    <Avatar>{u.username.charAt(0)}</Avatar>
+                    <Username>{u.username}</Username>
+                    <OnlineStatus online={onlineUsers.includes(u._id)}>{onlineUsers.includes(u._id) ? 'Online' : 'Offline'}</OnlineStatus>
                   </UserInfo>
                   <Actions>
-                    <ChallengeButton onClick={() => handlePlay(friend._id)}>Play</ChallengeButton>
+                    <SecondaryButton disabled={friends.some(f => f._id === u._id) || u.requestSent} onClick={() => handleSendRequest(u._id)}>
+                      {friends.some(f => f._id === u._id) ? 'Friend' : u.requestSent ? 'Sent' : 'Add'}
+                    </SecondaryButton>
                   </Actions>
                 </ListItem>
               ))}
             </List>
-          )}
-        </Section>
+          </Section>
+      </FullWidthSection>
 
-        <Section>
-          <SectionTitle>Game Modes</SectionTitle>
-          <GameModesGrid>
-            {/* Your GameModeCard components */}
-          </GameModesGrid>
-        </Section>
+      {/* Two-column layout: Friends + Game Modes */}
+      <TwoColumnLayout>
+          {/* Friends Section */}
+          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <SectionTitle>Friends List <span>{friends.length}</span></SectionTitle>
+            {friendsStatus === 'loading' ? (
+              <LoadingText>Loading...</LoadingText>
+            ) : friends.length === 0 ? (
+              <EmptyState>No friends yet. Add some!</EmptyState>
+            ) : (
+              <List>
+                {enrichedFriends.map(f => (
+                  <ListItem key={f._id} whileHover={{ x: 5 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <UserInfo>
+                      <Avatar>{f.username.charAt(0)}</Avatar>
+                      <Username>{f.username}</Username>
+                      <OnlineStatus online={f.online}>{f.online ? 'Online' : 'Offline'}</OnlineStatus>
+                    </UserInfo>
+                    <Actions>
+                      {f.online && <ChallengeButton onClick={() => handlePlay(f._id)}>Play</ChallengeButton>}
+                    </Actions>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Section>
+
+          {/* Game Modes Section */}
+          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <SectionTitle>Game Modes</SectionTitle>
+            <GameModesGrid>
+              <GameModeCard whileHover={{ scale: 1.03 }}>
+                <GameOptionIcon>🤖</GameOptionIcon>
+                <GameTitle>vs Computer</GameTitle>
+                <GameDescription>Challenge the AI and improve your skills.</GameDescription>
+                <PlayButton onClick={() => alert('Coming soon!')}>Play</PlayButton>
+              </GameModeCard>
+              <GameModeCard whileHover={{ scale: 1.03 }}>
+              <GameOptionIcon>👥</GameOptionIcon>
+                <GameTitle>vs Friend</GameTitle>
+                <GameDescription>Invite online friends to play.</GameDescription>
+                <PlayButton disabled={enrichedFriends.filter(f => f.online).length === 0}>Play</PlayButton>
+              </GameModeCard>
+            </GameModesGrid>
+          </Section>
       </TwoColumnLayout>
 
       {/* Full-width Friend Invites */}
