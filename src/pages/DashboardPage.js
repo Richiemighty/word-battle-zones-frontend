@@ -12,6 +12,13 @@ import { motion } from 'framer-motion';
 import styled, { keyframes, css } from 'styled-components';
 
 // Animations and shared styles
+
+const float = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+`;
+
 const pulse = keyframes`
   0% { box-shadow: 0 0 0 0 rgba(157,78,221,0.7); }
   70% { box-shadow: 0 0 0 15px rgba(157,78,221,0); }
@@ -148,11 +155,36 @@ const GameModeCard = styled(motion.div)`
   position:relative; overflow:hidden;
   &::before{ content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(to right,#4cc9f0,#4361ee);}
 `;
-const GameIcon = styled.div`
-  width:60px; height:60px; border-radius:50%; background:rgba(76,201,240,0.1);
-  display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:#4cc9f0;
-  margin-bottom:1rem; border:2px solid rgba(76,201,240,0.3);
+// const GameIcon = styled.div`
+//   width:60px; height:60px; border-radius:50%; background:rgba(76,201,240,0.1);
+//   display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:#4cc9f0;
+//   margin-bottom:1rem; border:2px solid rgba(76,201,240,0.3);
+// `;
+// Game-themed colors
+const colors = {
+  primary: '#6c5ce7',
+  secondary: '#a29bfe',
+  accent: '#fd79a8',
+  dark: '#2d3436',
+  darker: '#1e272e',
+  light: '#dfe6e9',
+  success: '#00b894',
+  danger: '#d63031',
+  warning: '#fdcb6e',
+  info: '#0984e3'
+};
+
+const GameOptionIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, ${colors.primary}, ${colors.accent});
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ${float} 3s ease-in-out infinite;
 `;
+
+
 const GameTitle = styled.h3`
   color:#fff; margin:0 0 .5rem 0; font-size:1.2rem;
 `;
@@ -221,6 +253,8 @@ const DashboardPage = () => {
   return (
     <DashboardContainer>
       <ContentWrapper>
+
+
         <Header>
           <Title>Game Zone<span>Welcome back, {user.username}!</span></Title>
           <HeaderControls>
@@ -228,6 +262,8 @@ const DashboardPage = () => {
             <LogoutButton whileHover={{ y: -2 }} onClick={handleLogout}>Logout</LogoutButton>
           </HeaderControls>
         </Header>
+
+
         <MainGrid>
           {/* Search Section */}
           <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -285,15 +321,20 @@ const DashboardPage = () => {
             <SectionTitle>Game Modes</SectionTitle>
             <GameModesGrid>
               <GameModeCard whileHover={{ scale: 1.03 }}>
-                <GameIcon>🖥️</GameIcon>
+                {/* <GameIcon>🖥️</GameIcon> */}
+                <GameOptionIcon>🤖</GameOptionIcon>
                 <GameTitle>vs Computer</GameTitle>
                 <GameDescription>Challenge the AI and improve your skills.</GameDescription>
                 <PlayButton onClick={() => alert('Coming soon!')}>Play</PlayButton>
               </GameModeCard>
               <GameModeCard whileHover={{ scale: 1.03 }}>
-                <GameIcon>🎮</GameIcon>
+                {/* <GameIcon>🎮</GameIcon> */}
+              <GameOptionIcon>👥</GameOptionIcon>
                 <GameTitle>vs Friend</GameTitle>
-                <GameDescription>Invite online friends to play.</GameDescription>
+                <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>
+                  Challenge your friends online
+                </p>
+                {/* <GameDescription>Invite online friends to play.</GameDescription> */}
                 <PlayButton disabled={enrichedFriends.filter(f => f.online).length === 0}>Play</PlayButton>
               </GameModeCard>
             </GameModesGrid>
