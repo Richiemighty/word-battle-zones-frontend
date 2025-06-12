@@ -17,7 +17,7 @@ function App() {
 
         {/* ✅ Protected dashboard route */}
         <Route 
-          path="/dashboard" 
+          path="/" 
           element={
             <PrivateRoute>
               <DashboardPage />
@@ -33,3 +33,4 @@ function App() {
 }
 
 export default App;
+
