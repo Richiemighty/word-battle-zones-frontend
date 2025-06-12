@@ -1,3 +1,4 @@
+// src/pages/DashboardPage.js
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -7,928 +8,323 @@ import { initializeSocket } from '../services/socketManager';
 import { fetchFriendRequests } from '../features/friendRequests/friendRequestsSlice';
 import { respondToFriendRequest } from '../features/friends/friendRequestsSlice';
 import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import styled, { keyframes, css } from 'styled-components';
 
-// Game-themed colors
-const colors = {
-  primary: '#6c5ce7',
-  secondary: '#a29bfe',
-  accent: '#fd79a8',
-  dark: '#2d3436',
-  darker: '#1e272e',
-  light: '#dfe6e9',
-  success: '#00b894',
-  danger: '#d63031',
-  warning: '#fdcb6e',
-  info: '#0984e3'
-};
-
-// Animations
-const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-`;
-
+// Animations and shared styles
 const pulse = keyframes`
-  0% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.7); }
-  70% { box-shadow: 0 0 0 12px rgba(108, 92, 231, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(157,78,221,0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(157,78,221,0); }
+  100% { box-shadow: 0 0 0 0 rgba(157,78,221,0); }
 `;
-
-const gradientBackground = css`
-  background: linear-gradient(135deg, ${colors.darker} 0%, ${colors.dark} 100%);
+const gradientBg = css`
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
 `;
-
-// Styled Components
 const DashboardContainer = styled.div`
-  min-height: 100vh;
-  ${gradientBackground};
-  color: ${colors.light};
-  font-family: 'Poppins', sans-serif;
-  padding: 1rem;
-  position: relative;
-  overflow-x: hidden;
-
-  @media (min-width: 768px) {
-    padding: 1.5rem;
-  }
-
-  @media (min-width: 1024px) {
-    padding: 2rem;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 300px;
-    background: linear-gradient(135deg, rgba(108, 92, 231, 0.2) 0%, rgba(253, 121, 168, 0.1) 100%);
-    z-index: 0;
-    pointer-events: none;
-  }
+  min-height: 100vh; ${gradientBg}
+  color: #fff; font-family: 'Poppins', sans-serif; padding: 1rem; position: relative;
+  &::before { /* subtle pattern */ }
+  @media (min-width: 768px){ padding:1.5rem; }
+  @media (min-width: 1024px){ padding:2rem; }
 `;
-
+const ContentWrapper = styled.div`
+  position: relative; z-index:1; max-width:1600px; margin:0 auto;
+`;
 const Header = styled.header`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-  position: relative;
-  z-index: 1;
+  display:flex; flex-direction:column; gap:1rem; margin-bottom:2rem; position:relative;
+  &::after{ content:''; position:absolute; bottom:0;left:0;width:100%;height:1px; background:linear-gradient(90deg,rgba(76,201,240,0.3),rgba(67,97,238,0.8),rgba(76,201,240,0.3)); }
+  @media (min-width:768px){ flex-direction:row; justify-content:space-between; align-items:center; }
 `;
-
 const Title = styled.h1`
-  font-size: 1.8rem;
-  margin: 0;
-  font-weight: 700;
-  background: linear-gradient(90deg, ${colors.secondary}, ${colors.primary});
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  position: relative;
-  display: inline-block;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, ${colors.secondary}, ${colors.primary});
-    border-radius: 3px;
-  }
-
-  @media (min-width: 768px) {
-    font-size: 2.2rem;
-  }
+  font-size:1.8rem;margin:0;font-weight:700;
+  background:linear-gradient(90deg,#4cc9f0,#4361ee);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-transform:uppercase;letter-spacing:1px;
+  span{ font-size:1.2rem; display:block; font-weight:400; color:rgba(255,255,255,0.8); margin-top:0.3rem; }
+  @media(min-width:768px){ font-size:2.2rem; span{font-size:1.4rem;} }
 `;
-
-const UserBadge = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+const HeaderControls = styled.div`
+  display:flex; gap:1rem; align-items:center;
 `;
-
-const Avatar = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, ${colors.primary}, ${colors.accent});
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1.2rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-`;
-
 const StatusBadge = styled.div`
-  padding: 0.5rem 1rem;
-  background-color: ${props => props.connected ? colors.success : colors.danger};
-  color: white;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-
-  &::before {
-    content: '';
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: ${props => props.connected ? '#fff' : '#fff'};
-    animation: ${props => props.connected ? css`${pulse} 2s infinite` : 'none'};
-  }
+  padding:.5rem 1rem; border-radius:50px; font-size:.9rem; display:flex; align-items:center; gap:.5rem;
+  background-color:${p => p.connected ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'};
+  color:${p => p.connected ? '#4ade80' : '#f87171'};
+  border:1px solid ${p => p.connected ? 'rgba(74,222,128,0.5)' : 'rgba(248,113,113,0.5)'};
+  &::before{ content:''; width:8px; height:8px; border-radius:50%; background-color:${p => p.connected ? '#4ade80' : '#f87171'}; margin-right:.3rem;}
 `;
-
-const LogoutButton = styled.button`
-  padding: 0.5rem 1.5rem;
-  background: linear-gradient(135deg, ${colors.danger}, #c0392b);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &::before {
-    content: '🚪';
-  }
+const LogoutButton = styled(motion.button)`
+  padding:.5rem 1.5rem; border-radius:50px; cursor:pointer; font-weight:500;
+  background:rgba(248,113,113,0.2); color:#f87171; border:1px solid rgba(248,113,113,0.5);
+  backdrop-filter:blur(5px);
+  &:hover { background:rgba(248,113,113,0.3); transform:translateY(-2px); }
 `;
-
+const MainGrid = styled.div`
+  display:grid; grid-template-columns:1fr; gap:1.5rem;
+  @media(min-width:1024px){ grid-template-columns:1fr 1fr; }
+`;
 const Section = styled(motion.section)`
-  background: rgba(30, 39, 46, 0.8);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  position: relative;
-  z-index: 1;
-  transition: transform 0.3s ease;
-
-  &:hover {
-    transform: translateY(-5px);
-  }
+  background:rgba(15,23,42,0.7); border-radius:16px; padding:1.5rem; backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.1); box-shadow:0 8px 32px rgba(0,0,0,0.1);
+  &:hover{ border-color:rgba(76,201,240,0.3); box-shadow:0 10px 40px rgba(0,0,0,0.2); }
 `;
-
 const SectionTitle = styled.h2`
-  font-size: 1.4rem;
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: ${colors.light};
-  position: relative;
-  padding-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 50px;
-    height: 3px;
-    background: linear-gradient(90deg, ${colors.primary}, ${colors.accent});
-    border-radius: 3px;
-  }
-
-  &::before {
-    content: '${props => props.icon || '🎮'}';
-    font-size: 1.2rem;
-  }
+  font-size:1.3rem;margin-bottom:1rem;color:#fff;display:flex;align-items:center;gap:.5rem;
+  &::before{content:'';width:4px;height:1.2rem;background:linear-gradient(to bottom,#4cc9f0,#4361ee);border-radius:2px;}
+  span{ margin-left:auto;color:rgba(255,255,255,0.6); font-size:.9rem; }
+  @media(min-width:768px){ font-size:1.5rem; }
 `;
-
 const SearchForm = styled.form`
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
+  display:flex;gap:.75rem;margin-bottom:1rem;width:100%;
 `;
-
 const SearchInput = styled.input`
-  flex: 1;
-  min-width: 200px;
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: ${colors.light};
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  &:focus {
-    outline: none;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0 2px ${colors.primary};
-  }
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
+  flex:1; padding:.75rem 1rem; border-radius:8px; font-size:1rem;
+  border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;
+  &:focus{ outline:none; border-color:rgba(76,201,240,0.5); box-shadow:0 0 0 3px rgba(76,201,240,0.1); }
+  &::placeholder{ color:rgba(255,255,255,0.4); }
 `;
-
-const Button = styled(motion.button)`
-  padding: 0.75rem 1.5rem;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-
-    &::after {
-      opacity: 1;
-    }
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none !important;
-  }
+const ButtonBase = styled(motion.button)`
+  padding:.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer;
+  font-weight:500; font-size:.9rem; display:flex; align-items:center; gap:.5rem;
+  transition:all .3s ease;
+  &:disabled{ opacity:.6; cursor:not-allowed; transform:none!important; }
 `;
-
-const PrimaryButton = styled(Button)`
-  background: linear-gradient(135deg, ${colors.primary}, #5a4fcf);
+const PrimaryButton = styled(ButtonBase)`
+  background:linear-gradient(135deg,#4361ee,#3a0ca3); color:#fff;
+  box-shadow:0 4px 15px rgba(67,97,238,0.3);
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(67,97,238,0.4); }
 `;
-
-const SecondaryButton = styled(Button)`
-  background: linear-gradient(135deg, ${colors.secondary}, #8c7ae6);
+const SecondaryButton = styled(ButtonBase)`
+  background:linear-gradient(135deg,#4cc9f0,#4895ef); color:#fff;
+  box-shadow:0 4px 15px rgba(76,201,240,0.3);
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(76,201,240,0.4); }
 `;
-
-const DangerButton = styled(Button)`
-  background: linear-gradient(135deg, ${colors.danger}, #c0392b);
+const DangerButton = styled(ButtonBase)`
+  background:linear-gradient(135deg,#f87171,#ef4444); color:#fff;
+  box-shadow:0 4px 15px rgba(248,113,113,0.3);
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(248,113,113,0.4); }
 `;
-
-const SuccessButton = styled(Button)`
-  background: linear-gradient(135deg, ${colors.success}, #00a884);
+const SuccessButton = styled(ButtonBase)`
+  background:linear-gradient(135deg,#10b981,#059669); color:#fff;
+  box-shadow:0 4px 15px rgba(16,185,129,0.3);
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(16,185,129,0.4); }
 `;
-
-const FriendList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 0.75rem;
+const List = styled.ul`
+  list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.75rem;
 `;
-
-const FriendItem = styled(motion.li)`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+const ListItem = styled(motion.li)`
+  background:rgba(255,255,255,0.05); border-radius:8px; padding:1rem;
+  border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center;
+  justify-content:space-between;
+  &:hover{ background:rgba(255,255,255,0.08); border-color:rgba(76,201,240,0.2); transform:translateX(5px); }
 `;
-
-const FriendInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+const UserInfo = styled.div`
+  display:flex; align-items:center; gap:.75rem; flex:1; min-width:0;
 `;
-
-// const OnlineStatus = styled.span`
-//   display: inline-block;
-//   width: 12px;
-//   height: 12px;
-//   border-radius: 50%;
-//   background-color: ${props => props.online ? colors.success : '#7f8c8d'};
-//   box-shadow: 0 0 8px ${props => props.online ? colors.success : 'transparent'};
-//   position: relative;
-
-//   &::after {
-//     content: '';
-//     position: absolute;
-//     top: -3px;
-//     left: -3px;
-//     right: -3px;
-//     bottom: -3px;
-//     border-radius: 50%;
-//     border: 1px solid ${props => props.online ? colors.success : 'transparent'};
-//     animation: ${props => props.online ? css`${pulse} 2s infinite` : 'none'};
-//   }
-// `;
-
-const GameOptionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-  }
+const Avatar = styled.div`
+  width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#4cc9f0,#4361ee);
+  display:flex; align-items:center; justify-content:center; font-weight:bold; color:white;flex-shrink:0;
 `;
-
-const GameOptionCard = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-      to bottom right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    transform: rotate(30deg);
-    transition: all 0.5s ease;
-    opacity: 0;
-  }
-
-  &:hover::before {
-    animation: shine 1.5s infinite;
-    opacity: 1;
-  }
-
-  @keyframes shine {
-    0% {
-      transform: translateX(-100%) rotate(30deg);
-    }
-    100% {
-      transform: translateX(100%) rotate(30deg);
-    }
-  }
+const Username = styled.span`
+  font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 `;
-
-const GameOptionIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, ${colors.primary}, ${colors.accent});
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: ${float} 3s ease-in-out infinite;
+const OnlineStatus = styled.div`
+  display:flex; align-items:center; gap:.3rem; font-size:.8rem;
+  color:${p => p.online ? '#4ade80' : '#9ca3af'};
+  &::before{ content:''; width:8px; height:8px; border-radius:50%;
+    background-color:${p => p.online ? '#4ade80' : '#9ca3af'}; }
 `;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 2rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1rem;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
+const Actions = styled.div`
+  display:flex; gap:.5rem; flex-shrink:0;
 `;
-
-const LoadingText = styled.div`
-  text-align: center;
-  padding: 1.5rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1rem;
+const GameModesGrid = styled.div`
+  display:grid; gap:1rem; grid-template-columns:1fr;
+  @media(min-width:768px){ grid-template-columns:repeat(2,1fr); }
 `;
-
-const ResponsiveGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-
-  @media (min-width: 1024px) {
-    grid-template-columns: 1fr 1fr;
-  }
+const GameModeCard = styled(motion.div)`
+  background:rgba(15,23,42,0.7); border-radius:12px; padding:1.5rem;
+  border:1px solid rgba(255,255,255,0.1); cursor:pointer;
+  &:hover{ border-color:rgba(76,201,240,0.3); transform:translateY(-5px); box-shadow:0 10px 25px rgba(0,0,0,0.2); }
+  position:relative; overflow:hidden;
+  &::before{ content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(to right,#4cc9f0,#4361ee);}
 `;
-
+const GameIcon = styled.div`
+  width:60px; height:60px; border-radius:50%; background:rgba(76,201,240,0.1);
+  display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:#4cc9f0;
+  margin-bottom:1rem; border:2px solid rgba(76,201,240,0.3);
+`;
+const GameTitle = styled.h3`
+  color:#fff; margin:0 0 .5rem 0; font-size:1.2rem;
+`;
+const GameDescription = styled.p`
+  color:rgba(255,255,255,0.7); margin:0 0 1rem 0; font-size:.9rem;
+`;
 const PlayButton = styled(motion.button)`
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, ${colors.accent}, #e84393);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  animation: ${pulse} 2s infinite;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &::before {
-    content: '🎯';
-  }
+  padding:.5rem 1.5rem; border:none; border-radius:50px; cursor:pointer;
+  background:linear-gradient(135deg,#9d4edd,#7b2cbf); color:#fff;
+  animation:${pulse} 2s infinite; box-shadow:0 4px 15px rgba(157,78,221,0.3);
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(157,78,221,0.4); animation:none; }
+`;
+const EmptyState = styled.div`
+  padding:2rem 1rem; text-align:center; color:rgba(255,255,255,0.6);
+  font-size:.9rem; border:1px dashed rgba(255,255,255,0.1); border-radius:8px;
+`;
+const LoadingText = styled.div`
+  padding:1rem; text-align:center; color:rgba(255,255,255,0.6); font-size:.9rem;
+`;
+const ChallengeButton = styled(ButtonBase)`
+  padding:.5rem 1rem; background:linear-gradient(135deg,#9d4edd,#7b2cbf);
+  color:#fff; box-shadow:0 4px 10px rgba(157,78,221,0.3); font-size:.8rem;
+  &:hover{ transform:translateY(-2px); box-shadow:0 6px 15px rgba(157,78,221,0.4); }
 `;
 
-const UserAvatar = styled.div`
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, ${colors.primary}, ${colors.accent});
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1rem;
-`;
-
-const Badge = styled.span`
-  padding: 0.25rem 0.5rem;
-  background: ${props => props.variant === 'online' ? colors.success : colors.warning};
-  color: white;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: 500;
-`;
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-`;
-
-const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 1rem;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-`;
-
-const StatValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-  background: linear-gradient(90deg, ${colors.secondary}, ${colors.primary});
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
-`;
-
-function toTitleCase(str) {
-  return str
-    .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
+// function toTitleCase(str) {
+//   return str?.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+// }
 
 const DashboardPage = () => {
-  const auth = useSelector(state => state.auth);
+  const auth = useSelector(s => s.auth);
   const user = auth.user?.user;
-
-  const { friends, status: friendsStatus } = useSelector(state => state.friends);
-  const { results: searchResults, loading: searchLoading, error: searchError } = useSelector(state => state.search);
-  const { requests: incomingRequests, status: requestStatus } = useSelector(state => state.friendRequests);
-  const { isConnected, onlineUsers } = useSelector(state => state.socket);
-
+  const { friends, status: friendsStatus } = useSelector(s => s.friends);
+  const { results: searchResults, loading: searchLoading } = useSelector(s => s.search);
+  const { requests: incomingRequests, status: requestStatus } = useSelector(s => s.friendRequests);
+  const { isConnected, onlineUsers } = useSelector(s => s.socket);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-  
+    if (!user) { navigate('/auth'); return; }
     dispatch(fetchFriends());
     dispatch(fetchFriendRequests());
     initializeSocket(user._id || user.id);
-  
-    const intervalId = setInterval(() => {
-      dispatch(fetchFriends());
-    }, 10000);
-  
-    const handleUnload = () => {
-      const token = user?.token;
-      if (token) {
-        navigator.sendBeacon(
-          `${process.env.REACT_APP_API_URL}/api/users/logout`,
-          new Blob([], { type: 'application/json' })
-        );
-      }
-    };
-  
-    window.addEventListener('beforeunload', handleUnload);
-  
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('beforeunload', handleUnload);
-      dispatch(clearSearchResults());
-    };
+    const intv = setInterval(() => dispatch(fetchFriends()), 10000);
+    return () => { clearInterval(intv); dispatch(clearSearchResults()); };
   }, [user, navigate, dispatch]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      dispatch(searchUsers(searchQuery));
-    } else {
-      dispatch(clearSearchResults());
-    }
-  };
-
-  const handleSendRequest = (userId) => {
-    dispatch(sendFriendRequest(userId));
-  };
-
-  const handleRespondToRequest = async (requestId, action) => {
-    try {
-      await dispatch(respondToFriendRequest({ requestId, action })).unwrap();
-      dispatch(fetchFriendRequests());
-      dispatch(fetchFriends());
-    } catch (error) {
-      console.error('Error responding to friend request:', error);
-    }
-  };
-    
+  const handleSearch = e => { e.preventDefault(); searchQuery.trim() ? dispatch(searchUsers(searchQuery)) : dispatch(clearSearchResults()); };
+  const handleSendRequest = id => dispatch(sendFriendRequest(id));
+  const handleRespond = async (rid, act) => { await dispatch(respondToFriendRequest({ requestId: rid, action: act })).unwrap(); dispatch(fetchFriends()); dispatch(fetchFriendRequests()); };
   const handleLogout = async () => {
-    try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/logout`, { userId: user._id || user.id });
-      localStorage.removeItem('token');
-      navigate('/auth');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/logout`, { userId: user._id || user.id });
+    localStorage.removeItem('token');
+    navigate('/auth');
   };
-
-  const handleStartGameWithFriend = (friendId) => {
-    alert(`Game invitation sent to friend ${friendId}`);
-  };
+  const handlePlay = id => alert(`Game invitation sent to ${id}`);
 
   if (!user) return null;
 
-  const friendsWithStatus = friends?.map(friend => ({
-    ...friend,
-    online: onlineUsers.includes(friend._id)
-  })) || [];
-
-  const onlineFriendsCount = friendsWithStatus.filter(f => f.online).length;
-  const pendingRequestsCount = incomingRequests?.length || 0;
+  const enrichedFriends = friends.map(f => ({
+    ...f, online: f.online || onlineUsers.includes(f._id)
+  }));
 
   return (
     <DashboardContainer>
-      <Header>
-        <Title>Game Dashboard</Title>
-        <UserBadge>
-          <Avatar>{user.username.charAt(0).toUpperCase()}</Avatar>
-          <StatusBadge connected={isConnected}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </StatusBadge>
-          <LogoutButton onClick={handleLogout}>
-            Logout
-          </LogoutButton>
-        </UserBadge>
-      </Header>
+      <ContentWrapper>
+        <Header>
+          <Title>Game Zone<span>Welcome back, {user.username}!</span></Title>
+          <HeaderControls>
+            <StatusBadge connected={isConnected}>{isConnected ? 'Connected' : 'Disconnected'}</StatusBadge>
+            <LogoutButton whileHover={{ y: -2 }} onClick={handleLogout}>Logout</LogoutButton>
+          </HeaderControls>
+        </Header>
+        <MainGrid>
+          {/* Search Section */}
+          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <SectionTitle>Search Users <span>{searchLoading ? '...' : ''}</span></SectionTitle>
+            <SearchForm onSubmit={handleSearch}>
+              <SearchInput placeholder="Search by username" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <PrimaryButton type="submit" disabled={searchLoading}>Search</PrimaryButton>
+            </SearchForm>
+            {searchLoading && <LoadingText>Searching...</LoadingText>}
+            <List>
+              {searchResults.map(u => (
+                <ListItem key={u._id} whileHover={{ x: 5 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <UserInfo>
+                    <Avatar>{u.username.charAt(0)}</Avatar>
+                    <Username>{u.username}</Username>
+                    <OnlineStatus online={onlineUsers.includes(u._id)}>{onlineUsers.includes(u._id) ? 'Online' : 'Offline'}</OnlineStatus>
+                  </UserInfo>
+                  <Actions>
+                    <SecondaryButton disabled={friends.some(f => f._id === u._id) || u.requestSent} onClick={() => handleSendRequest(u._id)}>
+                      {friends.some(f => f._id === u._id) ? 'Friend' : u.requestSent ? 'Sent' : 'Add'}
+                    </SecondaryButton>
+                  </Actions>
+                </ListItem>
+              ))}
+            </List>
+          </Section>
 
-      {/* Quick Stats */}
-      <StatsContainer>
-        <StatCard>
-          <StatValue>{friendsWithStatus.length}</StatValue>
-          <StatLabel>Total Friends</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatValue>{onlineFriendsCount}</StatValue>
-          <StatLabel>Online Now</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatValue>{pendingRequestsCount}</StatValue>
-          <StatLabel>Pending Requests</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatValue>0</StatValue>
-          <StatLabel>Active Games</StatLabel>
-        </StatCard>
-      </StatsContainer>
-
-      {/* Main Content Grid */}
-      <ResponsiveGrid>
-        {/* Friends Section */}
-        <Section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <SectionTitle icon="👥">Your Friends</SectionTitle>
-          {friendsStatus === 'loading' ? (
-            <LoadingText>Loading friends...</LoadingText>
-          ) : friendsWithStatus.length === 0 ? (
-            <EmptyState>No friends yet. Search for players to add friends!</EmptyState>
-          ) : (
-            <FriendList>
-              <AnimatePresence>
-                {friendsWithStatus.map(friend => (
-                  <FriendItem
-                    key={friend._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <FriendInfo>
-                      <UserAvatar>{friend.username.charAt(0).toUpperCase()}</UserAvatar>
-                      <div>
-                        <div style={{ fontWeight: '500' }}>{friend.username}</div>
-                        {friend.online ? (
-                          <Badge variant="online">Online</Badge>
-                        ) : (
-                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Last seen: recently</span>
-                        )}
-                      </div>
-                    </FriendInfo>
-                    <div>
-                      {friend.online && (
-                        <PlayButton
-                          onClick={() => handleStartGameWithFriend(friend._id)}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          Play
-                        </PlayButton>
-                      )}
-                    </div>
-                  </FriendItem>
+          {/* Friends Section */}
+          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <SectionTitle>Friends List <span>{friends.length}</span></SectionTitle>
+            {friendsStatus === 'loading' ? (
+              <LoadingText>Loading...</LoadingText>
+            ) : friends.length === 0 ? (
+              <EmptyState>No friends yet. Add some!</EmptyState>
+            ) : (
+              <List>
+                {enrichedFriends.map(f => (
+                  <ListItem key={f._id} whileHover={{ x: 5 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <UserInfo>
+                      <Avatar>{f.username.charAt(0)}</Avatar>
+                      <Username>{f.username}</Username>
+                      <OnlineStatus online={f.online}>{f.online ? 'Online' : 'Offline'}</OnlineStatus>
+                    </UserInfo>
+                    <Actions>
+                      {f.online && <ChallengeButton onClick={() => handlePlay(f._id)}>Play</ChallengeButton>}
+                    </Actions>
+                  </ListItem>
                 ))}
-              </AnimatePresence>
-            </FriendList>
-          )}
-        </Section>
+              </List>
+            )}
+          </Section>
 
-        {/* Game Options Section */}
-        <Section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <SectionTitle icon="🎮">Game Modes</SectionTitle>
-          <GameOptionsGrid>
-            <GameOptionCard
-              onClick={() => alert("Coming soon: VS Computer Mode")}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <GameOptionIcon>🤖</GameOptionIcon>
-              <h3>VS Computer</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>
-                Practice against AI opponent
-              </p>
-              <PrimaryButton
-                style={{ marginTop: '15px' }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Play Now
-              </PrimaryButton>
-            </GameOptionCard>
+          {/* Game Modes Section */}
+          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <SectionTitle>Game Modes</SectionTitle>
+            <GameModesGrid>
+              <GameModeCard whileHover={{ scale: 1.03 }}>
+                <GameIcon>🖥️</GameIcon>
+                <GameTitle>vs Computer</GameTitle>
+                <GameDescription>Challenge the AI and improve your skills.</GameDescription>
+                <PlayButton onClick={() => alert('Coming soon!')}>Play</PlayButton>
+              </GameModeCard>
+              <GameModeCard whileHover={{ scale: 1.03 }}>
+                <GameIcon>🎮</GameIcon>
+                <GameTitle>vs Friend</GameTitle>
+                <GameDescription>Invite online friends to play.</GameDescription>
+                <PlayButton disabled={enrichedFriends.filter(f => f.online).length === 0}>Play</PlayButton>
+              </GameModeCard>
+            </GameModesGrid>
+          </Section>
 
-            <GameOptionCard
-              onClick={() => {
-                if (friendsWithStatus.length === 0) {
-                  alert("You need to add friends first!");
-                } else {
-                  alert("Select a friend from your friends list to play with");
-                }
-              }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <GameOptionIcon>👥</GameOptionIcon>
-              <h3>VS Friend</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>
-                Challenge your friends online
-              </p>
-              <PrimaryButton
-                style={{ marginTop: '15px' }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Select Friend
-              </PrimaryButton>
-            </GameOptionCard>
-          </GameOptionsGrid>
-        </Section>
-      </ResponsiveGrid>
-
-      {/* Search Section */}
-      <Section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <SectionTitle icon="🔍">Find Players</SectionTitle>
-        <SearchForm onSubmit={handleSearch}>
-          <SearchInput
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by username..."
-          />
-          <PrimaryButton
-            type="submit"
-            disabled={searchLoading}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {searchLoading ? 'Searching...' : 'Search'}
-          </PrimaryButton>
-        </SearchForm>
-
-        {searchError && <p style={{ color: colors.danger }}>Error: {searchError}</p>}
-
-        <AnimatePresence>
-          {!searchLoading && searchResults?.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <FriendList>
-                {searchResults.map(userResult => {
-                  const isOnline = onlineUsers.includes(userResult._id);
-                  const isFriend = (friends || []).some(f => f._id === userResult._id);
-                  const requestSent = userResult.requestSent;
-
-                  return (
-                    <FriendItem
-                      key={userResult._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <FriendInfo>
-                        <UserAvatar>{userResult.username.charAt(0).toUpperCase()}</UserAvatar>
-                        <div>
-                          <div style={{ fontWeight: '500' }}>{userResult.username}</div>
-                          {isOnline ? (
-                            <Badge variant="online">Online</Badge>
-                          ) : (
-                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Offline</span>
-                          )}
-                        </div>
-                      </FriendInfo>
-                      <div>
-                        {isFriend ? (
-                          <span style={{ color: colors.secondary }}>Friends</span>
-                        ) : requestSent ? (
-                          <span style={{ color: colors.warning }}>Request Sent</span>
-                        ) : (
-                          <SecondaryButton
-                            onClick={() => handleSendRequest(userResult._id)}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            Add Friend
-                          </SecondaryButton>
-                        )}
-                      </div>
-                    </FriendItem>
-                  );
-                })}
-              </FriendList>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {!searchLoading && searchResults?.length === 0 && searchQuery && (
-          <EmptyState>No players found matching "{searchQuery}"</EmptyState>
-        )}
-      </Section>
-
-      {/* Friend Requests Section */}
-      <Section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        <SectionTitle icon="📩">Friend Requests</SectionTitle>
-        {requestStatus === 'loading' ? (
-          <LoadingText>Loading requests...</LoadingText>
-        ) : !incomingRequests || incomingRequests.length === 0 ? (
-          <EmptyState>No new friend requests</EmptyState>
-        ) : (
-          <FriendList>
-            <AnimatePresence>
-              {Array.isArray(incomingRequests) &&
-                incomingRequests.map((req) => (
-                  <FriendItem
-                    key={req._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <FriendInfo>
-                      <UserAvatar>{req.username?.charAt(0).toUpperCase() || '?'}</UserAvatar>
-                      <span>
-                        <strong>{req.username ? toTitleCase(req.username) : 'Unknown User'}</strong> wants to be your friend
-                      </span>
-                    </FriendInfo>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <SuccessButton
-                        onClick={() => handleRespondToRequest(req._id, 'accept')}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Accept
-                      </SuccessButton>
-                      <DangerButton
-                        onClick={() => handleRespondToRequest(req._id, 'reject')}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Reject
-                      </DangerButton>
-                    </div>
-                  </FriendItem>
-                ))
-              }
-            </AnimatePresence>
-          </FriendList>
-        )}
-      </Section>
+          {/* Friend Requests Section */}
+          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <SectionTitle>Friend Requests <span>{incomingRequests.length}</span></SectionTitle>
+            {requestStatus === 'loading' ? (
+              <LoadingText>Loading...</LoadingText>
+            ) : incomingRequests.length === 0 ? (
+              <EmptyState>No new requests.</EmptyState>
+            ) : (
+              <List>
+                {incomingRequests.map(r => (
+                  <ListItem key={r._id} whileHover={{ x: 5 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <UserInfo>
+                      <Avatar>{r.username.charAt(0)}</Avatar>
+                      <Username>{r.username}</Username>
+                    </UserInfo>
+                    <Actions>
+                      <SuccessButton onClick={() => handleRespond(r._id, 'accept')}>Accept</SuccessButton>
+                      <DangerButton onClick={() => handleRespond(r._id, 'reject')}>Reject</DangerButton>
+                    </Actions>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Section>
+        </MainGrid>
+      </ContentWrapper>
     </DashboardContainer>
   );
 };
