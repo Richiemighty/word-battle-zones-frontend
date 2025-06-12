@@ -430,7 +430,8 @@ const DashboardPage = () => {
                 <UserInfo>
                   <Avatar>{getAvatarLetter(req.username)}</Avatar>
                   <div>
-                    <Username>{toTitleCase(req.username)}</Username>
+                    <Username>{toTitleCase(req.username)} </Username>
+
                     <span style={{ fontSize: '.8rem', color: 'rgba(255,255,255,0.6)' }}>
                       Incoming request
                     </span>
