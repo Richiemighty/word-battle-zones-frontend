@@ -149,11 +149,36 @@ const GameModesGrid = styled.div`
   @media(min-width:768px){ grid-template-columns:repeat(2,1fr); }
 `;
 const GameModeCard = styled(motion.div)`
-  background:rgba(15,23,42,0.7); border-radius:12px; padding:1.5rem;
-  border:1px solid rgba(255,255,255,0.1); cursor:pointer;
-  &:hover{ border-color:rgba(76,201,240,0.3); transform:translateY(-5px); box-shadow:0 10px 25px rgba(0,0,0,0.2); }
-  position:relative; overflow:hidden;
-  &::before{ content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(to right,#4cc9f0,#4361ee);}
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  /* Flexbox centering */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center; /* Optional: center text as well */
+
+  &:hover {
+    border-color: rgba(76, 201, 240, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, #4cc9f0, #4361ee);
+  }
 `;
 
 const FullWidthSection = styled.div`
