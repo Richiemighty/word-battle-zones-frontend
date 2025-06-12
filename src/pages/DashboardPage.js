@@ -71,10 +71,30 @@ const LogoutButton = styled(motion.button)`
 //   @media(min-width:1024px){ grid-template-columns:1fr 1fr; }
 // `;
 const Section = styled(motion.section)`
-  background:rgba(15,23,42,0.7); border-radius:16px; padding:1.5rem; backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,0.1); box-shadow:0 8px 32px rgba(0,0,0,0.1);
-  &:hover{ border-color:rgba(76,201,240,0.3); box-shadow:0 10px 40px rgba(0,0,0,0.2); }
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+
+  display: flex;
+  flex-direction: column;
+
+  /* Fixed height variant */
+  &.fixed-height {
+    height: 400px;
+    overflow-y: auto;
+  }
+
+  /* Scrollbar styling */
+  &.fixed-height::-webkit-scrollbar {
+    width: 6px;
+  }
+  &.fixed-height::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
 `;
+
 const SectionTitle = styled.h2`
   font-size:1.3rem;margin-bottom:1rem;color:#fff;display:flex;align-items:center;gap:.5rem;
   &::before{content:'';width:4px;height:1.2rem;background:linear-gradient(to bottom,#4cc9f0,#4361ee);border-radius:2px;}
@@ -339,7 +359,7 @@ const DashboardPage = () => {
       {/* Two-column layout: Friends + Game Modes */}
       <TwoColumnLayout>
           {/* Friends Section */}
-          <Section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Section className="fixed-height" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <SectionTitle>Friends List <span>{friends.length}</span></SectionTitle>
             {friendsStatus === 'loading' ? (
               <LoadingText>Loading...</LoadingText>
