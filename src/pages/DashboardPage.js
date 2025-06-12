@@ -296,7 +296,7 @@ const DashboardPage = () => {
     dispatch(fetchFriends());
     dispatch(fetchFriendRequests());
     initializeSocket(user._id || user.id);
-    const intv = setInterval(() => dispatch(fetchFriends()), 10000);
+    const intv = setInterval(() => dispatch(fetchFriends()), 30000);
     return () => { clearInterval(intv); dispatch(clearSearchResults()); };
   }, [user, navigate, dispatch]);
 
