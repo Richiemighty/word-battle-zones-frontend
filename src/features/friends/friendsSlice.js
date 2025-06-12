@@ -7,7 +7,7 @@ export const fetchFriends = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const token = getState().auth.user.token;
-      const response = await axios.get('http://localhost:5000/api/friends', {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/friends`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -34,7 +34,14 @@ const friendsSlice = createSlice({
       })
       .addCase(fetchFriends.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.friends = action.payload; // ✅ store actual friends array
+        const data = action.payload;
+        if (Array.isArray(data)) {
+          state.friends = data;
+        } else if (data && Array.isArray(data.friends)) {
+          state.friends = data.friends;
+        } else {
+          state.friends = [];
+        }
       })
       .addCase(fetchFriends.rejected, (state, action) => {
         state.status = 'failed';
