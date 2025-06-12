@@ -22,8 +22,8 @@ const AuthPage = () => {
 
   // Redirect if user is authenticated
   useEffect(() => {
-    if (user) {
-      navigate('/DashboardPage');
+    if (user ) {
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 

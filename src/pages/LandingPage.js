@@ -66,13 +66,13 @@ const LandingPage = () => {
             transition={{ delay: 1.5 }}
           >
             <button 
-              onClick={() => navigate('/auth?mode=login')}
+              onClick={() => navigate('/auth')}
               className="btn-login"
             >
               <FaSignInAlt /> Sign In
             </button>
             <button 
-              onClick={() => navigate('/auth?mode=register')}
+              onClick={() => navigate('/auth')}
               className="btn-signup"
             >
               <FaUserPlus /> Sign Up
