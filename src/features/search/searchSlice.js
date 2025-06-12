@@ -11,7 +11,7 @@ export const searchUsers = createAsyncThunk(
     try {
       const token = getState().auth.user?.token;
       const response = await axios.get(
-        `/api/users/search?username=${encodeURIComponent(query)}`,
+        `${process.env.REACT_APP_API_URL}/api/users/search?username=${encodeURIComponent(query)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`

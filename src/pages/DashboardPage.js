@@ -100,8 +100,8 @@ const DashboardPage = () => {
     
   const handleLogout = async () => {
     try {
-      // await axios.post('/api/auth/logout', { userId: user._id || user.id });
-      await axios.post('/api/users/logout', { userId: user._id || user.id });
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/logout`, { userId: user._id || user.id });
+      // await axios.post('/api/users/logout', { userId: user._id || user.id });
 
   
       // Optionally clear user state, tokens, etc.
