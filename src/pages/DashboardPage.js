@@ -7,8 +7,8 @@ import { initializeSocket } from '../services/socketManager';
 import { fetchFriendRequests } from '../features/friendRequests/friendRequestsSlice';
 import { respondToFriendRequest } from '../features/friends/friendRequestsSlice';
 import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
 import styled, { keyframes } from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Animations
 const fadeIn = keyframes`
@@ -16,12 +16,13 @@ const fadeIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
+// Styled Components
 const Container = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #f57878;
+  color: #333;
   background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
   min-height: 100vh;
 
@@ -224,7 +225,7 @@ const Avatar = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #3498db;
+  background-color: ${props => props.online ? '#2ecc71' : '#95a5a6'};
   color: white;
   display: flex;
   align-items: center;
@@ -347,12 +348,11 @@ const DashboardPage = () => {
 
   if (!user) return null;
 
+  // Fixed: Use onlineUsers from socket state to determine online status
   const friendsWithStatus = friends?.map(friend => ({
     ...friend,
     online: onlineUsers.includes(friend._id)
   })) || [];
-
-  
 
   return (
     <Container>
@@ -362,7 +362,7 @@ const DashboardPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Game Dashboard
+          Welcome, {user.username}!
         </motion.h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <StatusBadge online={isConnected}>
@@ -385,9 +385,7 @@ const DashboardPage = () => {
         transition={{ delay: 0.2 }}
       >
         <Card>
-          <h2>Welcome back, {user.username}!</h2>
-          <p>Ready for your next game? Choose an option below to get started.</p>
-          
+          <h2>Search Players</h2>
           <SearchForm 
             onSubmit={handleSearch}
             initial={{ opacity: 0 }}
@@ -398,7 +396,7 @@ const DashboardPage = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search players by username..."
+              placeholder="Search by username..."
               whileFocus={{ scale: 1.01 }}
             />
             <Button 
@@ -438,14 +436,14 @@ const DashboardPage = () => {
                         transition={{ duration: 0.3 }}
                       >
                         <UserInfo>
-                          <Avatar>
+                          <Avatar online={isOnline}>
                             {userResult.username.charAt(0).toUpperCase()}
                           </Avatar>
                           <div>
                             <div style={{ fontWeight: 'bold' }}>{userResult.username}</div>
                             <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
                               <OnlineIndicator online={isOnline} />
-                              {isOnline ? 'Online' : 'Offline'}
+                              {isOnline ? 'Online now' : 'Offline'}
                             </div>
                           </div>
                         </UserInfo>
@@ -569,12 +567,13 @@ const DashboardPage = () => {
                       transition={{ duration: 0.3 }}
                     >
                       <UserInfo>
-                        <Avatar style={{ backgroundColor: friend.online ? '#2ecc71' : '#95a5a6' }}>
+                        <Avatar online={friend.online}>
                           {friend.username.charAt(0).toUpperCase()}
                         </Avatar>
                         <div>
                           <div style={{ fontWeight: 'bold' }}>{friend.username}</div>
                           <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
+                            <OnlineIndicator online={friend.online} />
                             {friend.online ? 'Online now' : 'Last seen recently'}
                           </div>
                         </div>
