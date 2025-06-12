@@ -7,8 +7,376 @@ import { initializeSocket } from '../services/socketManager';
 import { fetchFriendRequests } from '../features/friendRequests/friendRequestsSlice';
 import { respondToFriendRequest } from '../features/friends/friendRequestsSlice';
 import axios from 'axios';
+import styled, { keyframes } from 'styled-components';
+import { FaGamepad, FaUserFriends, FaSearch, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaRobot, FaUser } from 'react-icons/fa';
+import { GiTrophy } from 'react-icons/gi';
+import { motion } from 'framer-motion';
 
+// Animations
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
 
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+
+// Styled Components
+const DashboardContainer = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  animation: ${fadeIn} 0.5s ease-out;
+
+  h1 {
+    color: #2c3e50;
+    font-size: 2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+`;
+
+const StatusBadge = styled.div`
+  padding: 8px 15px;
+  background-color: ${props => props.connected ? '#2ecc71' : '#e74c3c'};
+  color: white;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+`;
+
+const LogoutButton = styled.button`
+  padding: 8px 15px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+  }
+`;
+
+const SearchSection = styled.section`
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  animation: ${fadeIn} 0.6s ease-out;
+
+  h2 {
+    color: #3498db;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+`;
+
+const SearchForm = styled.form`
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 30px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  }
+`;
+
+const SearchButton = styled.button`
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+  }
+
+  &:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
+const SearchResults = styled.div`
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+`;
+
+const UserCard = styled.div`
+  padding: 15px;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #f8f9fa;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  span {
+    font-weight: 600;
+  }
+`;
+
+const OnlineStatus = styled.span`
+  font-size: 0.8rem;
+  color: ${props => props.online ? '#2ecc71' : '#95a5a6'};
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: ${props => props.online ? '#2ecc71' : '#95a5a6'};
+  }
+`;
+
+const ActionButton = styled.button`
+  padding: 8px 15px;
+  background: ${props => 
+    props.variant === 'primary' ? 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)' :
+    props.variant === 'secondary' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' :
+    props.variant === 'danger' ? 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)' :
+    'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)'};
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  &:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
+const MainContent = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Section = styled.div`
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  animation: ${fadeIn} 0.7s ease-out;
+`;
+
+const SectionTitle = styled.h2`
+  color: ${props => props.color || '#2c3e50'};
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0f0f0;
+`;
+
+const FriendList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const FriendItem = styled.li`
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #f8f9fa;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const GameOptions = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+`;
+
+const GameOptionCard = styled(motion.div)`
+  background: ${props => 
+    props.variant === 'ai' ? 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)' :
+    'linear-gradient(135deg, #3498db 0%, #2980b9 100%)'};
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  h3 {
+    margin: 10px 0 5px;
+    font-size: 1.2rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+`;
+
+const IconWrapper = styled.div`
+  font-size: 2rem;
+  margin-bottom: 10px;
+`;
+
+const RequestsSection = styled(Section)`
+  grid-column: 1 / -1;
+`;
+
+const RequestItem = styled.div`
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 30px;
+  color: #7f8c8d;
+
+  p {
+    margin: 0;
+  }
+`;
+
+const TrophyIcon = styled(GiTrophy)`
+  color: #f39c12;
+  font-size: 1.5rem;
+`;
 
 function toTitleCase(str) {
   return str
@@ -41,17 +409,15 @@ const DashboardPage = () => {
     dispatch(fetchFriendRequests());
     initializeSocket(user._id || user.id);
   
-    // 🔁 Set interval to refresh friends every 10 seconds
     const intervalId = setInterval(() => {
       dispatch(fetchFriends());
     }, 10000);
   
-    // 🚪 Handle tab/browser close to update online status
     const handleUnload = () => {
       const token = user?.token;
       if (token) {
         navigator.sendBeacon(
-          '${process.env.REACT_APP_API_URL}/api/users/logout',
+          `${process.env.REACT_APP_API_URL}/api/users/logout`,
           new Blob([], { type: 'application/json' })
         );
       }
@@ -65,8 +431,6 @@ const DashboardPage = () => {
       dispatch(clearSearchResults());
     };
   }, [user, navigate, dispatch]);
-  
-
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -81,16 +445,9 @@ const DashboardPage = () => {
     dispatch(sendFriendRequest(userId));
   };
 
-
-
-
-  
-
   const handleRespondToRequest = async (requestId, action) => {
     try {
       await dispatch(respondToFriendRequest({ requestId, action })).unwrap();
-  
-      // ✅ Refresh both requests and friends list after accepting
       dispatch(fetchFriendRequests());
       dispatch(fetchFriends());
     } catch (error) {
@@ -101,301 +458,230 @@ const DashboardPage = () => {
   const handleLogout = async () => {
     try {
       await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/logout`, { userId: user._id || user.id });
-      // await axios.post('/api/users/logout', { userId: user._id || user.id });
-
-  
-      // Optionally clear user state, tokens, etc.
       localStorage.removeItem('token');
-      navigate('/auth'); // Redirect to login page
+      navigate('/auth');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
     
-
   const handleStartGameWithFriend = (friendId) => {
     alert(`Game invitation sent to friend ${friendId}`);
   };
 
   if (!user) return null;
 
-  console.log('Friends:', friends);
   const friendsWithStatus = friends?.map(friend => ({
     ...friend,
-    online: friend.online // ← now directly from DB
+    online: onlineUsers.includes(friend._id)
   })) || [];
   
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Welcome, {user.username}!</h1>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <div style={{ 
-            padding: '5px 10px',
-            backgroundColor: isConnected ? '#4CAF50' : '#f44336',
-            color: 'white',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}>
+    <DashboardContainer>
+      <Header>
+        <motion.h1 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <FaGamepad /> Game Dashboard
+        </motion.h1>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <StatusBadge connected={isConnected}>
             {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-          </div>
-          <button 
-            onClick={handleLogout}
-            style={{ 
-              padding: '5px 10px', 
-              backgroundColor: '#f44336', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Logout
-          </button>
+          </StatusBadge>
+          <LogoutButton onClick={handleLogout}>
+            <FaSignOutAlt /> Logout
+          </LogoutButton>
         </div>
-      </div>
+      </Header>
 
-
-      {/* Search Bar */}
-      <div style={{ marginBottom: '20px' }}>
-        <h2>Search Users</h2>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-          <input
+      <SearchSection>
+        <h2><FaSearch /> Find Players</h2>
+        <SearchForm onSubmit={handleSearch}>
+          <SearchInput
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by username"
-            style={{ 
-              padding: '10px', 
-              flex: 1, 
-              borderRadius: '4px', 
-              border: '1px solid #ddd',
-              fontSize: '16px'
-            }}
+            placeholder="Search by username..."
           />
-          <button 
-            type="submit" 
-            style={buttonStyle('blue')}
-            disabled={searchLoading}
-          >
+          <SearchButton type="submit" disabled={searchLoading}>
             {searchLoading ? 'Searching...' : 'Search'}
-          </button>
-        </form>
+          </SearchButton>
+        </SearchForm>
 
-        {searchError && <p style={{ color: 'red' }}>Error: {searchError}</p>}
+        {searchError && <p style={{ color: '#e74c3c' }}>Error: {searchError}</p>}
 
         {!searchLoading && searchResults?.length > 0 && (
-          <div style={{ 
-            marginTop: '10px', 
-            border: '1px solid #ddd', 
-            borderRadius: '5px', 
-            padding: '15px',
-            backgroundColor: '#f9f9f9'
-          }}>
-            <h3>Search Results:</h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {searchResults.map(userResult => {
-                const isOnline = onlineUsers.includes(userResult._id);
-                const isFriend = (friends || []).some(f => f._id === userResult._id);
-                const requestSent = userResult.requestSent;
+          <SearchResults>
+            {searchResults.map(userResult => {
+              const isOnline = onlineUsers.includes(userResult._id);
+              const isFriend = (friends || []).some(f => f._id === userResult._id);
+              const requestSent = userResult.requestSent;
 
-                return (
-                  <li 
-                    key={userResult._id} 
-                    style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      padding: '10px',
-                      borderBottom: '1px solid #eee',
-                      backgroundColor: '#fff'
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontWeight: 'bold' }}>{userResult.username}</span>
-                      {isOnline && <span style={{ marginLeft: '10px', color: 'green' }}>• Online</span>}
-                    </div>
-                    <div>
-                      {isFriend ? (
-                        <span style={{ color: 'gray' }}>Already friends</span>
-                      ) : requestSent ? (
-                        <span style={{ color: 'green' }}>Request sent</span>
-                      ) : (
-                        <button 
-                          onClick={() => handleSendRequest(userResult._id)}
-                          style={buttonStyle('green')}
-                        >
-                          Send Request
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+              return (
+                <UserCard key={userResult._id}>
+                  <UserInfo>
+                    <span>{userResult.username}</span>
+                    <OnlineStatus online={isOnline}>
+                      {isOnline ? 'Online' : 'Offline'}
+                    </OnlineStatus>
+                  </UserInfo>
+                  <div>
+                    {isFriend ? (
+                      <ActionButton variant="secondary" disabled>
+                        <FaUserFriends /> Friends
+                      </ActionButton>
+                    ) : requestSent ? (
+                      <ActionButton variant="secondary" disabled>
+                        <FaCheck /> Request Sent
+                      </ActionButton>
+                    ) : (
+                      <ActionButton 
+                        variant="primary" 
+                        onClick={() => handleSendRequest(userResult._id)}
+                      >
+                        <FaUserPlus /> Add Friend
+                      </ActionButton>
+                    )}
+                  </div>
+                </UserCard>
+              );
+            })}
+          </SearchResults>
         )}
 
         {!searchLoading && searchResults?.length === 0 && searchQuery && (
-          <p>No users found matching "{searchQuery}"</p>
+          <EmptyState>
+            <p>No players found matching "{searchQuery}"</p>
+          </EmptyState>
         )}
-      </div>
+      </SearchSection>
 
-      {/* Friend List + Game Options */}
-
-      <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-
-        <div style={{
-          flex: 1,
-          border: '1px solid #ddd',
-          padding: '20px',
-          borderRadius: '5px',
-          backgroundColor: '#f9f9f9'
-        }}>
-          <h2>Friends ({friendsWithStatus.length})</h2>
+      <MainContent>
+        <Section>
+          <SectionTitle color="#8e44ad">
+            <FaUserFriends /> Your Friends ({friendsWithStatus.length})
+          </SectionTitle>
           {friendsStatus === 'loading' ? (
-            
-            <p>Loading friends...</p>
+            <EmptyState>
+              <p>Loading friends...</p>
+            </EmptyState>
           ) : friendsWithStatus.length === 0 ? (
-            <p>No friends yet. Search for users to add friends!</p>
+            <EmptyState>
+              <p>No friends yet. Search for players to add friends!</p>
+            </EmptyState>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0 }}>
+            <FriendList>
               {friendsWithStatus.map(friend => (
-                <li 
-                  key={friend._id} 
-                  style={{ 
-                    padding: '10px',
-                    borderBottom: '1px solid #eee',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                >
-                  <span>{friend.username}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span>{friend.online ? '🟢 Online' : '⚪ Offline'}</span>
-                    {friend.online && (
-                      <button 
+                <FriendItem key={friend._id}>
+                  <UserInfo>
+                    <span>{friend.username}</span>
+                    <OnlineStatus online={friend.online}>
+                      {friend.online ? 'Online' : 'Offline'}
+                    </OnlineStatus>
+                  </UserInfo>
+                  <div>
+                    {friend.online ? (
+                      <ActionButton 
+                        variant="purple" 
                         onClick={() => handleStartGameWithFriend(friend._id)}
-                        style={buttonStyle('purple')}
                       >
-                        Play
-                      </button>
+                        <FaGamepad /> Play
+                      </ActionButton>
+                    ) : (
+                      <ActionButton variant="secondary" disabled>
+                        <FaGamepad /> Play
+                      </ActionButton>
                     )}
                   </div>
-                </li>
+                </FriendItem>
               ))}
-            </ul>
+            </FriendList>
           )}
-        </div>
+        </Section>
 
-
-
-
-
-
-
-        {/* Game Options */}
-        <div style={{
-          flex: 1,
-          border: '1px solid #ddd',
-          padding: '20px',
-          borderRadius: '5px',
-          backgroundColor: '#f9f9f9'
-        }}>
-          <h2>Game Options</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button 
-              onClick={() => alert("Coming soon: VS Computer Mode")} 
-              style={buttonStyle('green')}
+        <Section>
+          <SectionTitle color="#3498db">
+            <FaGamepad /> Game Options
+          </SectionTitle>
+          <GameOptions>
+            <GameOptionCard 
+              variant="ai"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => alert("Coming soon: VS Computer Mode")}
             >
-              Play vs Computer
-            </button>
-            <button 
+              <IconWrapper>
+                <FaRobot />
+              </IconWrapper>
+              <h3>Play vs Computer</h3>
+              <p>Challenge our AI opponent</p>
+            </GameOptionCard>
+            
+            <GameOptionCard 
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 if (friendsWithStatus.length === 0) {
                   alert("You need to add friends first!");
                 } else {
                   alert("Select a friend from your friends list to play with");
                 }
-              }} 
-              style={buttonStyle('blue')}
+              }}
             >
-              Play vs Friend
-            </button>
-          </div>
-        </div>
-      </div>
+              <IconWrapper>
+                <FaUser />
+              </IconWrapper>
+              <h3>Play vs Friend</h3>
+              <p>Challenge your friends</p>
+            </GameOptionCard>
+          </GameOptions>
+        </Section>
+      </MainContent>
 
-      {/* Incoming Requests */}
-      <div style={{
-        marginTop: '30px',
-        border: '1px solid #ddd',
-        padding: '20px',
-        borderRadius: '5px',
-        backgroundColor: '#f9f9f9'
-      }}>
-        <h2>Incoming Friend Requests</h2>
-
+      <RequestsSection>
+        <SectionTitle color="#e74c3c">
+          <FaUserPlus /> Friend Requests
+        </SectionTitle>
         {requestStatus === 'loading' ? (
-          <p>Loading requests...</p>
+          <EmptyState>
+            <p>Loading requests...</p>
+          </EmptyState>
         ) : !incomingRequests || incomingRequests.length === 0 ? (
-          <p>No new friend requests.</p>
+          <EmptyState>
+            <p>No new friend requests.</p>
+          </EmptyState>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <div>
             {Array.isArray(incomingRequests) &&
               incomingRequests.map((req) => (
-                <li
-                  key={req._id}
-                  style={{
-                    padding: '10px',
-                    borderBottom: '1px solid #ccc',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                >
+                <RequestItem key={req._id}>
                   <span>
-                    <strong>{req.username ? toTitleCase(req.username) : 'Unknown User'}</strong> sent you a friend request
+                    <strong>{req.username ? toTitleCase(req.username) : 'Unknown User'}</strong> wants to be your friend
                   </span>
-                  <div>
-                    <button
+                  <ButtonGroup>
+                    <ActionButton 
+                      variant="primary" 
                       onClick={() => handleRespondToRequest(req._id, 'accept')}
-                      style={buttonStyle('green')}
                     >
-                      Accept
-                    </button>
-                    <button
+                      <FaCheck /> Accept
+                    </ActionButton>
+                    <ActionButton 
+                      variant="danger" 
                       onClick={() => handleRespondToRequest(req._id, 'reject')}
-                      style={buttonStyle('red')}
                     >
-                      Reject
-                    </button>
-                  </div>
-                </li>
+                      <FaTimes /> Reject
+                    </ActionButton>
+                  </ButtonGroup>
+                </RequestItem>
               ))
             }
-          </ul>
+          </div>
         )}
-      </div>
-
-
-    </div>
+      </RequestsSection>
+    </DashboardContainer>
   );
 };
-
-const buttonStyle = (color) => ({
-  padding: '10px 15px',
-  backgroundColor: 
-    color === 'green' ? '#4CAF50' : 
-    color === 'blue' ? '#2196F3' :
-    color === 'purple' ? '#9c27b0' :
-    color === 'red' ? '#f44336' : '#555',
-  color: 'white',
-  border: 'none',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '16px'
-});
 
 export default DashboardPage;
