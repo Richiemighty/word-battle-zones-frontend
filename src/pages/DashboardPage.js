@@ -51,7 +51,7 @@ const DashboardPage = () => {
       const token = user?.token;
       if (token) {
         navigator.sendBeacon(
-          'http://localhost:5000/api/users/logout',
+          '${process.env.REACT_APP_API_URL}/api/users/logout',
           new Blob([], { type: 'application/json' })
         );
       }
@@ -341,36 +341,38 @@ const DashboardPage = () => {
           <p>No new friend requests.</p>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {incomingRequests.map((req) => (
-              <li
-                key={req._id}
-                style={{
-                  padding: '10px',
-                  borderBottom: '1px solid #ccc',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <span>
-                  <strong>{req.username ? toTitleCase(req.username) : 'Unknown User'}</strong> sent you a friend request
-                </span>
-                <div>
-                  <button
-                    onClick={() => handleRespondToRequest(req._id, 'accept')}
-                    style={buttonStyle('green')}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleRespondToRequest(req._id, 'reject')}
-                    style={buttonStyle('red')}
-                  >
-                    Reject
-                  </button>
-                </div>
-              </li>
-            ))}
+            {Array.isArray(incomingRequests) &&
+              incomingRequests.map((req) => (
+                <li
+                  key={req._id}
+                  style={{
+                    padding: '10px',
+                    borderBottom: '1px solid #ccc',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <span>
+                    <strong>{req.username ? toTitleCase(req.username) : 'Unknown User'}</strong> sent you a friend request
+                  </span>
+                  <div>
+                    <button
+                      onClick={() => handleRespondToRequest(req._id, 'accept')}
+                      style={buttonStyle('green')}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleRespondToRequest(req._id, 'reject')}
+                      style={buttonStyle('red')}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </li>
+              ))
+            }
           </ul>
         )}
       </div>

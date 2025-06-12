@@ -7,7 +7,7 @@ export const fetchFriends = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const token = getState().auth.user.token;
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/friends`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/friends`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
