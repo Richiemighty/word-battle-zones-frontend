@@ -7,302 +7,6 @@ import { initializeSocket } from '../services/socketManager';
 import { fetchFriendRequests } from '../features/friendRequests/friendRequestsSlice';
 import { respondToFriendRequest } from '../features/friends/friendRequestsSlice';
 import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
-import styled, { keyframes } from 'styled-components';
-
-// Styled Components
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
-const pulse = keyframes`
-  0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(74, 144, 226, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); }
-`;
-
-const DashboardContainer = styled.div`
-  min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #fff;
-  font-family: 'Poppins', sans-serif;
-  padding: 20px;
-  animation: ${fadeIn} 0.5s ease-out;
-
-  @media (min-width: 768px) {
-    padding: 30px;
-  }
-
-  @media (min-width: 1024px) {
-    padding: 40px;
-  }
-`;
-
-const Header = styled.header`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-  gap: 15px;
-`;
-
-const Title = styled.h1`
-  font-size: 1.8rem;
-  background: linear-gradient(90deg, #4cc9f0, #4361ee);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin: 0;
-  font-weight: 700;
-
-  @media (min-width: 768px) {
-    font-size: 2.2rem;
-  }
-`;
-
-const StatusBadge = styled.div`
-  padding: 8px 15px;
-  background-color: ${props => props.connected ? '#4ade80' : '#f87171'};
-  color: white;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const LogoutButton = styled.button`
-  padding: 8px 20px;
-  background: linear-gradient(135deg, #f87171, #ef4444);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const Section = styled(motion.section)`
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 20px;
-  margin-bottom: 25px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.4rem;
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #fff;
-  position: relative;
-  padding-bottom: 10px;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 50px;
-    height: 3px;
-    background: linear-gradient(90deg, #4cc9f0, #4361ee);
-    border-radius: 3px;
-  }
-`;
-
-const SearchForm = styled.form`
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-`;
-
-const SearchInput = styled.input`
-  flex: 1;
-  min-width: 200px;
-  padding: 12px 15px;
-  border-radius: 10px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.5);
-  }
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-  }
-`;
-
-const PrimaryButton = styled(motion.button)`
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #4361ee, #3a0ca3);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &:disabled {
-    background: #6b7280;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-`;
-
-const SecondaryButton = styled(PrimaryButton)`
-  background: linear-gradient(135deg, #4cc9f0, #4895ef);
-`;
-
-const DangerButton = styled(PrimaryButton)`
-  background: linear-gradient(135deg, #f87171, #ef4444);
-`;
-
-const SuccessButton = styled(PrimaryButton)`
-  background: linear-gradient(135deg, #10b981, #059669);
-`;
-
-const FriendList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-`;
-
-const FriendItem = styled(motion.li)`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
-  }
-`;
-
-const FriendInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const OnlineStatus = styled.span`
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: ${props => props.online ? '#4ade80' : '#9ca3af'};
-`;
-
-const GameOptionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-  }
-`;
-
-const GameOptionCard = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  }
-`;
-
-const GameOptionIcon = styled.div`
-  font-size: 2.5rem;
-  margin-bottom: 15px;
-  background: linear-gradient(135deg, #4cc9f0, #4361ee);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 30px;
-  color: rgba(255, 255, 255, 0.7);
-`;
-
-const LoadingText = styled.div`
-  text-align: center;
-  padding: 20px;
-  color: rgba(255, 255, 255, 0.7);
-`;
-
-const ResponsiveGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
-
-  @media (min-width: 1024px) {
-    grid-template-columns: 1fr 1fr;
-  }
-`;
-
-const PlayButton = styled(motion.button)`
-  padding: 8px 15px;
-  background: linear-gradient(135deg, #9d4edd, #7b2cbf);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  animation: ${pulse} 2s infinite;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  }
-`;
 
 function toTitleCase(str) {
   return str
@@ -316,7 +20,7 @@ const DashboardPage = () => {
   const auth = useSelector(state => state.auth);
   const user = auth.user?.user;
 
-  const { friends, status: friendsStatus } = useSelector(state => state.friends);
+  const { friends } = useSelector(state => state.friends);
   const { results: searchResults, loading: searchLoading, error: searchError } = useSelector(state => state.search);
   const { requests: incomingRequests, status: requestStatus } = useSelector(state => state.friendRequests);
   const { isConnected, onlineUsers } = useSelector(state => state.socket);
@@ -330,15 +34,15 @@ const DashboardPage = () => {
       navigate('/auth');
       return;
     }
-  
+
     dispatch(fetchFriends());
     dispatch(fetchFriendRequests());
     initializeSocket(user._id || user.id);
-  
+
     const intervalId = setInterval(() => {
       dispatch(fetchFriends());
     }, 10000);
-  
+
     const handleUnload = () => {
       const token = user?.token;
       if (token) {
@@ -348,9 +52,9 @@ const DashboardPage = () => {
         );
       }
     };
-  
+
     window.addEventListener('beforeunload', handleUnload);
-  
+
     return () => {
       clearInterval(intervalId);
       window.removeEventListener('beforeunload', handleUnload);
@@ -380,7 +84,7 @@ const DashboardPage = () => {
       console.error('Error responding to friend request:', error);
     }
   };
-    
+
   const handleLogout = async () => {
     try {
       await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/logout`, { userId: user._id || user.id });
@@ -399,256 +103,279 @@ const DashboardPage = () => {
 
   const friendsWithStatus = friends?.map(friend => ({
     ...friend,
-    online: onlineUsers.includes(friend._id)
+    online: friend.online
   })) || [];
-  
-  return (
-    <DashboardContainer>
-      <Header>
-        <Title>Welcome, {user.username}!</Title>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <StatusBadge connected={isConnected}>
-            {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-          </StatusBadge>
-          <LogoutButton onClick={handleLogout}>
-            Logout
-          </LogoutButton>
-        </div>
-      </Header>
 
-      {/* Search Section */}
-      <Section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <SectionTitle>Find Players</SectionTitle>
-        <SearchForm onSubmit={handleSearch}>
-          <SearchInput
-            type="text"
+  return (
+    <div style={styles.container}>
+      <div style={styles.overlay}>
+        <div style={styles.header}>
+          <h1 style={styles.heading}>🎮 Welcome, {user.username}!</h1>
+          <div style={styles.statusBar}>
+            <span style={{
+              ...styles.connectionStatus,
+              backgroundColor: isConnected ? '#4CAF50' : '#f44336'
+            }}>
+              {isConnected ? '🟢 Online' : '🔴 Offline'}
+            </span>
+            <button onClick={handleLogout} style={styles.logoutButton}>
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* SEARCH */}
+        <form onSubmit={handleSearch} style={styles.searchForm}>
+          <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by username..."
+            placeholder="🔍 Search for users"
+            style={styles.searchInput}
           />
-          <PrimaryButton
-            type="submit"
-            disabled={searchLoading}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <button type="submit" style={styles.actionButton}>
             {searchLoading ? 'Searching...' : 'Search'}
-          </PrimaryButton>
-        </SearchForm>
+          </button>
+        </form>
 
-        {searchError && <p style={{ color: '#f87171' }}>Error: {searchError}</p>}
+        {/* SEARCH RESULTS */}
+        {searchError && <p style={{ color: 'red' }}>{searchError}</p>}
+        {searchResults?.length > 0 && (
+          <ul style={styles.resultList}>
+            {searchResults.map(userResult => {
+              const isFriend = (friends || []).some(f => f._id === userResult._id);
+              const requestSent = userResult.requestSent;
+              const isOnline = onlineUsers.includes(userResult._id);
 
-        <AnimatePresence>
-          {!searchLoading && searchResults?.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <FriendList>
-                {searchResults.map(userResult => {
-                  const isOnline = onlineUsers.includes(userResult._id);
-                  const isFriend = (friends || []).some(f => f._id === userResult._id);
-                  const requestSent = userResult.requestSent;
-
-                  return (
-                    <FriendItem
-                      key={userResult._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <FriendInfo>
-                        <span style={{ fontWeight: 'bold' }}>{userResult.username}</span>
-                        <OnlineStatus online={isOnline} />
-                        {isOnline && <span style={{ fontSize: '0.8rem', color: '#4ade80' }}>Online</span>}
-                      </FriendInfo>
-                      <div>
-                        {isFriend ? (
-                          <span style={{ color: '#9ca3af' }}>Already friends</span>
-                        ) : requestSent ? (
-                          <span style={{ color: '#4ade80' }}>Request sent</span>
-                        ) : (
-                          <SecondaryButton
-                            onClick={() => handleSendRequest(userResult._id)}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            Add Friend
-                          </SecondaryButton>
-                        )}
-                      </div>
-                    </FriendItem>
-                  );
-                })}
-              </FriendList>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {!searchLoading && searchResults?.length === 0 && searchQuery && (
-          <EmptyState>No players found matching "{searchQuery}"</EmptyState>
+              return (
+                <li key={userResult._id} style={styles.card}>
+                  <strong>{userResult.username}</strong>
+                  {isOnline && <span style={{ color: 'lime' }}> • Online</span>}
+                  <div>
+                    {isFriend ? (
+                      <span style={{ color: 'gray' }}>Friend</span>
+                    ) : requestSent ? (
+                      <span style={{ color: 'orange' }}>Request Sent</span>
+                    ) : (
+                      <button
+                        onClick={() => handleSendRequest(userResult._id)}
+                        style={styles.greenButton}>
+                        Add Friend
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </Section>
 
-      {/* Main Content Grid */}
-      <ResponsiveGrid>
-        {/* Friends Section */}
-        <Section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <SectionTitle>Your Friends ({friendsWithStatus.length})</SectionTitle>
-          {friendsStatus === 'loading' ? (
-            <LoadingText>Loading friends...</LoadingText>
-          ) : friendsWithStatus.length === 0 ? (
-            <EmptyState>No friends yet. Search for players to add friends!</EmptyState>
-          ) : (
-            <FriendList>
-              <AnimatePresence>
+        {/* MAIN DASHBOARD */}
+        <div style={styles.dashboard}>
+          {/* FRIENDS */}
+          <div style={styles.panel}>
+            <h2 style={styles.panelTitle}>Friends ({friendsWithStatus.length})</h2>
+            {friendsWithStatus.length === 0 ? (
+              <p style={styles.mutedText}>No friends yet. Start searching!</p>
+            ) : (
+              <ul style={styles.resultList}>
                 {friendsWithStatus.map(friend => (
-                  <FriendItem
-                    key={friend._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <FriendInfo>
-                      <span>{friend.username}</span>
-                      <OnlineStatus online={friend.online} />
-                      {friend.online && <span style={{ fontSize: '0.8rem', color: '#4ade80' }}>Online</span>}
-                    </FriendInfo>
+                  <li key={friend._id} style={styles.card}>
+                    <span>{friend.username}</span>
                     <div>
+                      <span>{friend.online ? '🟢' : '⚪'}</span>
                       {friend.online && (
-                        <PlayButton
-                          onClick={() => handleStartGameWithFriend(friend._id)}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          Challenge
-                        </PlayButton>
+                        <button onClick={() => handleStartGameWithFriend(friend._id)} style={styles.purpleButton}>
+                          Play
+                        </button>
                       )}
                     </div>
-                  </FriendItem>
+                  </li>
                 ))}
-              </AnimatePresence>
-            </FriendList>
-          )}
-        </Section>
+              </ul>
+            )}
+          </div>
 
-        {/* Game Options Section */}
-        <Section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <SectionTitle>Game Modes</SectionTitle>
-          <GameOptionsGrid>
-            <GameOptionCard
-              onClick={() => alert("Coming soon: VS Computer Mode")}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <GameOptionIcon>🤖</GameOptionIcon>
-              <h3>VS Computer</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>
-                Practice against AI opponent
-              </p>
-              <PrimaryButton
-                style={{ marginTop: '15px' }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Play Now
-              </PrimaryButton>
-            </GameOptionCard>
-
-            <GameOptionCard
-              onClick={() => {
-                if (friendsWithStatus.length === 0) {
-                  alert("You need to add friends first!");
-                } else {
-                  alert("Select a friend from your friends list to play with");
-                }
-              }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <GameOptionIcon>👥</GameOptionIcon>
-              <h3>VS Friend</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>
-                Challenge your friends online
-              </p>
-              <PrimaryButton
-                style={{ marginTop: '15px' }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Select Friend
-              </PrimaryButton>
-            </GameOptionCard>
-          </GameOptionsGrid>
-        </Section>
-      </ResponsiveGrid>
-
-      {/* Friend Requests Section */}
-      <Section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        <SectionTitle>Friend Requests</SectionTitle>
-        {requestStatus === 'loading' ? (
-          <LoadingText>Loading requests...</LoadingText>
-        ) : !incomingRequests || incomingRequests.length === 0 ? (
-          <EmptyState>No new friend requests</EmptyState>
-        ) : (
-          <FriendList>
-            <AnimatePresence>
-              {Array.isArray(incomingRequests) &&
-                incomingRequests.map((req) => (
-                  <FriendItem
-                    key={req._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <span>
-                      <strong>{req.username ? toTitleCase(req.username) : 'Unknown User'}</strong> wants to be your friend
-                    </span>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <SuccessButton
-                        onClick={() => handleRespondToRequest(req._id, 'accept')}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Accept
-                      </SuccessButton>
-                      <DangerButton
-                        onClick={() => handleRespondToRequest(req._id, 'reject')}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Reject
-                      </DangerButton>
-                    </div>
-                  </FriendItem>
-                ))
+          {/* GAME OPTIONS */}
+          <div style={styles.panel}>
+            <h2 style={styles.panelTitle}>Game Modes</h2>
+            <button style={styles.greenButton} onClick={() => alert("Coming soon: VS AI")}>VS Computer</button>
+            <button style={styles.blueButton} onClick={() => {
+              if (friendsWithStatus.length === 0) {
+                alert("Add friends to play!");
+              } else {
+                alert("Select a friend from your list");
               }
-            </AnimatePresence>
-          </FriendList>
-        )}
-      </Section>
-    </DashboardContainer>
+            }}>VS Friend</button>
+          </div>
+        </div>
+
+        {/* FRIEND REQUESTS */}
+        <div style={styles.panel}>
+          <h2 style={styles.panelTitle}>Friend Requests</h2>
+          {requestStatus === 'loading' ? (
+            <p style={styles.mutedText}>Loading...</p>
+          ) : incomingRequests?.length === 0 ? (
+            <p style={styles.mutedText}>No new requests.</p>
+          ) : (
+            <ul style={styles.resultList}>
+              {incomingRequests.map(req => (
+                <li key={req._id} style={styles.card}>
+                  <span><strong>{toTitleCase(req.username)}</strong> sent a request</span>
+                  <div>
+                    <button onClick={() => handleRespondToRequest(req._id, 'accept')} style={styles.greenButton}>Accept</button>
+                    <button onClick={() => handleRespondToRequest(req._id, 'reject')} style={styles.redButton}>Reject</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
   );
+};
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    background: 'url("https://wallpapercave.com/wp/wp6956804.jpg") no-repeat center center / cover',
+    padding: '20px',
+    fontFamily: 'Poppins, sans-serif',
+    display: 'flex',
+    justifyContent: 'center'
+  },
+  overlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: '30px',
+    borderRadius: '15px',
+    width: '100%',
+    maxWidth: '1100px',
+    color: '#fff',
+    animation: 'fadeIn 0.5s ease-in-out'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginBottom: '20px'
+  },
+  heading: {
+    fontSize: '2rem'
+  },
+  statusBar: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center'
+  },
+  connectionStatus: {
+    padding: '5px 10px',
+    borderRadius: '5px',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '14px'
+  },
+  logoutButton: {
+    padding: '8px 16px',
+    backgroundColor: '#f44336',
+    border: 'none',
+    borderRadius: '5px',
+    color: '#fff',
+    cursor: 'pointer'
+  },
+  searchForm: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px',
+    flexWrap: 'wrap'
+  },
+  searchInput: {
+    flex: 1,
+    padding: '10px',
+    borderRadius: '5px',
+    border: 'none',
+    fontSize: '16px'
+  },
+  dashboard: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    marginTop: '20px',
+    marginBottom: '20px',
+    flexWrap: 'wrap'
+  },
+  panel: {
+    backgroundColor: '#222',
+    padding: '20px',
+    borderRadius: '10px',
+    flex: 1
+  },
+  panelTitle: {
+    marginBottom: '10px'
+  },
+  resultList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0
+  },
+  card: {
+    backgroundColor: '#333',
+    borderRadius: '8px',
+    padding: '15px',
+    marginBottom: '10px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    transition: 'transform 0.3s ease',
+    animation: 'fadeIn 0.5s'
+  },
+  mutedText: {
+    color: '#aaa'
+  },
+  actionButton: {
+    padding: '10px 15px',
+    backgroundColor: '#2196F3',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer'
+  },
+  greenButton: {
+    padding: '8px 14px',
+    backgroundColor: '#4CAF50',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginLeft: '10px'
+  },
+  redButton: {
+    padding: '8px 14px',
+    backgroundColor: '#f44336',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginLeft: '10px'
+  },
+  purpleButton: {
+    padding: '8px 14px',
+    backgroundColor: '#9c27b0',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginLeft: '10px'
+  },
+  blueButton: {
+    padding: '10px 15px',
+    backgroundColor: '#03A9F4',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginTop: '10px'
+  }
 };
 
 export default DashboardPage;
